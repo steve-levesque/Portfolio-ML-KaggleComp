@@ -1,0 +1,26 @@
+venv/
+.idea/
+__pycache__/
+.ipynb_checkpoints/
+*.zip
+
+data/logs/*
+data/model_snapshots/*
+data/predictions/*
+data/sub_samples/*
+data/test/*
+data/train/*
+
+docs/plots/*
+
+# Left for example purposes
+!data/logs/mnist-supervised-classification-image-cnn_logs.txt
+!data/model_snapshots/mnist-supervised-classification-image-cnn_2epochs-128batch.h5
+!data/predictions/mnist-supervised-classification-image-cnn_0.9871428608894348.csv
+!data/sub_samples/mnist_sub_sample.csv
+!data/test/mnist_test.csv
+!data/train/mnist_train.csv
+
+!docs/plots/mnist-supervised-classification-image-cnn_2epochs-128batch_confusion-matrix.png
+!docs/plots/mnist-supervised-classification-image-cnn_2epochs-128batch_curves.png
+!docs/plots/mnist-supervised-classification-image-cnn_keras-model.png
