@@ -24,3 +24,11 @@ docs/plots/*
 !docs/plots/mnist-supervised-classification-image-cnn_2epochs-128batch_confusion-matrix.png
 !docs/plots/mnist-supervised-classification-image-cnn_2epochs-128batch_curves.png
 !docs/plots/mnist-supervised-classification-image-cnn_keras-model.png
+
+*.aux
+*.log
+*.gz
+*.fdb_latexmk
+__latexindent_temp.tex
+*.fls
+*.out
