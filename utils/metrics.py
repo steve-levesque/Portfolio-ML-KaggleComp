@@ -27,6 +27,7 @@ def label_repartition(labels):
     label_percents = np.zeros(length)
 
     for label in labels:
+        label = int(label)
         label_count[label] = label_count[label] + 1
 
     for i in range(0, length):
