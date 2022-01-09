@@ -22,7 +22,7 @@ def get_train_Xy(train, train_label_pos):
         pos = 1
     else:
         pos = 0
-    X_train = train.iloc[:, 1:n_features - pos]
+    X_train = train.iloc[:, 0:n_features - pos]
     y_train = train.iloc[:, train_label_pos]
     return X_train, y_train
 
