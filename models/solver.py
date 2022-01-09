@@ -4,9 +4,11 @@ from keras.utils.np_utils import to_categorical
 from sklearn.model_selection import train_test_split
 import math
 
+from models.ensembles.sc import sc_run
 from models.ensembles.xgb import *
 from models.lessers.knn import *
 from models.lessers.lr import *
+from models.lessers.lr_scratch import lr_scratch_objective, lr_scratch_predict, lr_scratch_train, lr_scratch_run
 from models.neural_networks.cnn import *
 from utils.dataset import *
 from utils.logs import global_info
@@ -32,6 +34,9 @@ ML = {
 
 
 class KaggleCompSolver:
+    # ==================================================================================================================
+    # Global constructor
+    # ==================================================================================================================
     def __init__(self,
                  comp_name='localhost',
                  comp_method_type='auto',  # supervised:classification
@@ -58,6 +63,7 @@ class KaggleCompSolver:
         self.random_state = 42
         self.test_size = test_size
 
+        # Paths variables init.
         self.comp_name = comp_name
         self.comp_method_type = comp_method_type
         self.comp_task_type = comp_task_type
@@ -111,6 +117,9 @@ class KaggleCompSolver:
                    test_columns_drop=[]):
         if len(train_columns_drop) > 0:
             self.orig_X_train = self.orig_X_train.drop(train_columns_drop, axis=1)
+
+            self.X_train, self.X_test, self.y_train, self.y_test \
+                = train_test_split(self.orig_X_train, self.orig_y_train, test_size=self.test_size, random_state=self.random_state)
         else:
             print("No columns specified for train data, no changes made.")
 
@@ -118,6 +127,18 @@ class KaggleCompSolver:
             self.test = self.test.drop(test_columns_drop, axis=1)
         else:
             print("No columns specified for test data, no changes made.")
+
+    def data_get_before_augmentation(self):
+        return self.orig_X_train, self.test
+
+    def data_set_after_augmentation(self,
+                                    aug_X_train,
+                                    aug_test):
+        self.orig_X_train = aug_X_train
+        self.test = aug_test
+        self.X_train, self.X_test, self.y_train, self.y_test \
+            = train_test_split(self.orig_X_train, self.orig_y_train, test_size=self.test_size,
+                               random_state=self.random_state)
 
     def solve(self,
               model=None,
@@ -139,11 +160,17 @@ class KaggleCompSolver:
         if self.comp_algo == 'lr':
             self.lr(metric_type)
 
+        if self.comp_algo == 'lr_scratch':
+            self.lr_scratch()
+
         if self.comp_algo == 'xgb':
             self.xgb(objective, metric_type)
 
         if self.comp_algo == 'cnn':
             self.cnn_image(model, batch_size, epochs)
+
+        if self.comp_algo == 'sc':
+            self.sc(models=model)
 
     # ==================================================================================================================
     # Models
@@ -175,12 +202,24 @@ class KaggleCompSolver:
 
         self.save_result(y_pred, result)
 
+    def lr_scratch(self):
+        """
+        Logistic Regression from scratch
+
+        :param:
+        :return:
+        """
+
+        y_pred, result = lr_scratch_run(self.X_train, self.y_train, self.test)
+
+        self.save_result(y_pred, result)
+
     def cnn_image(self,
                   model,
                   batch_size=64,
                   epochs=50):
         """
-        CNN towards vision/images
+        CNN for images computer vision
 
         :param model:
         :param batch_size:
@@ -234,6 +273,16 @@ class KaggleCompSolver:
         """
         best_hyperparams = xgb_train(objective, self.X_train, self.y_train, self.X_test, self.y_test)
         y_pred, result = xgb_predict(best_hyperparams, self.orig_X_train, self.orig_y_train, self.test, metric_type)
+        self.save_result(y_pred, result)
+
+    def sc(self,
+           models):
+        """
+        Stacking Classifier
+        :return:
+        """
+        y_pred = sc_run(models, self.orig_X_train, self.orig_y_train, self.test)
+        result = str(label_repartition(y_pred)[0])
         self.save_result(y_pred, result)
 
     # ==================================================================================================================
