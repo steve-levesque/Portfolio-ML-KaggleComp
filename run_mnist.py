@@ -4,6 +4,7 @@ from keras.layers import Conv2D, MaxPooling2D, BatchNormalization, Flatten, Dens
 import models.solver
 
 
+# ======================================================================================================================
 def define_model():
     model = Sequential()
     model.add(Conv2D(filters=64, kernel_size=(3, 3), activation="relu", input_shape=(28, 28, 1)))
@@ -23,11 +24,10 @@ def define_model():
     model.compile(loss="categorical_crossentropy", optimizer="adam", metrics=["accuracy"])
 
     return model
+# ======================================================================================================================
 
 
 if __name__ == '__main__':
-    print("Start of example usage with KaggleCompSolver for mnist ...")
-
     cnn_model = define_model()
 
     solver = models.solver.KaggleCompSolver(
@@ -39,7 +39,5 @@ if __name__ == '__main__':
     )
 
     solver.info(logs=True)
-
-    # solver.cnn_image(cnn_model, batch_size=128, epochs=2)
 
     solver.solve(model=cnn_model, objective='multi:softmax', metric_type='acc', batch_size=128, epochs=2)
