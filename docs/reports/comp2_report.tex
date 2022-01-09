@@ -1,0 +1,240 @@
+\documentclass{article}
+
+% if you need to pass options to natbib, use, e.g.:
+%     \PassOptionsToPackage{numbers, compress}{natbib}
+% before loading neurips_2021
+
+% ready for submission
+\usepackage[final]{_report}
+
+% to compile a preprint version, e.g., for submission to arXiv, add add the
+% [preprint] option:
+%     \usepackage[preprint]{_report}
+
+% to compile a camera-ready version, add the [final] option, e.g.:
+%     \usepackage[final]{_report}
+
+% to avoid loading the natbib package, add option nonatbib:
+%    \usepackage[nonatbib]{_report}
+
+\usepackage[utf8]{inputenc} % allow utf-8 input
+\usepackage[T1]{fontenc}    % use 8-bit T1 fonts
+\usepackage{hyperref}       % hyperlinks
+\usepackage{url}            % simple URL typesetting
+\usepackage{booktabs}       % professional-quality tables
+\usepackage{amsfonts}       % blackboard math symbols
+\usepackage{nicefrac}       % compact symbols for 1/2, etc.
+\usepackage{microtype}      % microtypography
+\usepackage{xcolor}         % colors
+\usepackage[pdftex]{graphicx}
+
+\title{
+  Rapport de la Compétition 2 \\ 
+  Crop Land Detection from Remote Sensing Data
+}
+
+% The \author macro works with any number of authors. There are two commands
+% used to separate the names and addresses of multiple authors: \And and \AND.
+%
+% Using \And between authors leaves it to LaTeX to determine where to break the
+% lines. Using \AND forces a line break at that point. So, if LaTeX puts 3 of 4
+% authors names on the first line, and the last on the second line, try using
+% \AND instead of \And before the third author name.
+
+\author{%
+  Weiyue Cai \\
+  Département d'informatique et \\
+  de recherche opérationnelle\\
+  Université de Montréal \\
+  \texttt{weiyue.cai@umontreal.ca} \\
+  \And
+  Steve Levesque \\
+  Département d'informatique et \\
+  de recherche opérationnelle\\
+  Université de Montréal \\
+  \texttt{steve.levesque@umontreal.ca} \\
+}
+
+\begin{document}
+
+\maketitle
+
+\begin{abstract}
+Le but de ce travail de compétition Kaggle est de classifier chaque point de 
+données en 2 catégories: Non-crop land (0) ou Crop land (1). L'ensemble du jeu 
+de données se compose de données mensuelles agrégées de télédétection 
+(satellite), météorologie et topographie.\\
+\end{abstract}
+
+\section{Algorithmes}
+\subsection{KNN}
+(1) données originales, n\_neighbours = 1, métrique par défaut (L2). \\
+public score: 0.99757, private score: 0.99669 (meilleur résultat parmis les deux 
+submissions finales) \\
+(2) données originales, n\_neighbours = 1, métrique: canberra. \\
+public score: 0.99516, private score: 0.99669 \\
+(3) données originales, n\_neighbours = 9, métrique: canberra. \\
+public score: 0.90337, private score: 0.89318 \\
+(4) données originales, n\_neighbours = 1, algorithm: ball tree,  métrique: 
+canberra. \\
+public score: 0.99273, private score: 0.99779 (notre meilleur résultat pas 
+sélectionné) \\
+(5) données originales, n\_neighbours = 1, algorithm: ball tree, métrique: 
+chebyshev. \\
+public score: 0.99514, private score: 0.99339 \\
+
+\begin{figure}[!htbp]
+  \centering
+  \includegraphics[scale=0.5]{../plots/comp2_knn_metrics.png}
+  \caption{Analyse des métriques avec KNN}
+\end{figure}
+
+\subsection{Voting}
+\subsubsection{Hard voting} 
+Avec les données originales et les algorithmes suivantes:  
+\begin{verbatim}
+adaboost = AdaBoostClassifier(n_estimators=150)
+knn = KNeighborsClassifier(n_neighbors=1)
+lgbm = LGBMClassifier()
+rf = RandomForestClassifier(n_estimators=350, max_depth=45, max_features='auto', 
+bootstrap=True, min_samples_leaf=1, min_samples_split=2)
+xgboost = XGBClassifier(max_depth= 6, n_estimators=157,
+learning_rate= 0.23989473738149508,
+gamma= 0.7442032316202452, random_state=42)
+\end{verbatim}
+public score: 0.98321, private score: 0.97396 \\
+
+\subsubsection{Soft voting} 
+Avec les données originales et les algorithmes suivantes: 
+\begin{verbatim}
+adaboost = AdaBoostClassifier(n_estimators=150)
+knn = KNeighborsClassifier(n_neighbors=1)
+lgbm = LGBMClassifier(max_depth=18, num_leaves=143,
+feature_fraction=0.5398760642626285, bagging_fraction=0.9304436544614162,
+learning_rate=0.06525287721325376, max_bin=24, min_data_in_leaf=20,
+subsample=0.175744924178873)
+rf = RandomForestClassifier(n_estimators=350,
+max_depth=45, max_features='auto', bootstrap=True,
+min_samples_leaf=1,  min_samples_split=2)
+xgboost = XGBClassifier(max_depth=7,n_estimators=157,
+learning_rate= 0.23989473738149508,
+gamma= 0.7442032316202452, random_state=42)
+\end{verbatim}
+public score: 0.99757, private score: 0.99559 \\
+
+\subsection{CNN}
+On reshape l'ensemble de données en (62000, 12, 18) (batch size, num channel, 
+num features) et applique Conv1d avec les paramètres suivants: 
+\begin{verbatim}
+conv = nn.Sequential(nn.Conv1d(in_channels=12, out_channels=24,kernel_size=1, 
+stride=1, padding=0), nn.ReLU(), nn.Flatten())
+\end{verbatim}
+Ensuite, on applique deux couches complètement connectées avec 256 neurones et 
+une couche de softmax.\\
+Résultats: (1) données originales: public score: 0.69601, private score: 
+0.63845; (2) données normalisées avec la moyenne et l'écart-type du jeu de 
+données d'entraînement: public score: 0.83663, private score: 0.81313. \\
+
+
+
+\subsection{LSTM}
+On reshape l'ensemble de données en (62000, 12, 18) (batch size, sequence
+ length, num features) et normalise les données avec la moyenne et l'écart-type 
+ de l'ensemble du jeu de données d'entraînement et applique LSTM avec les 
+ paramètres suivants: 
+\subsubsection{one direction LSTM}
+\begin{verbatim}
+batch_size = 128, input_size = 18, hidden_size = 200,
+layer_size = 3, output_size = 2, epochs=50, 
+learning rate=0.001   
+\end{verbatim}
+public score: 0.97810, private score: 0.97792
+
+\subsubsection{BiLSTM}
+\begin{verbatim}
+batch_size = 128, input_size = 18, hidden_size = 100,
+layer_size = 2, output_size = 2, epochs=50, 
+learning rate=0.001         
+\end{verbatim}
+public score: 0.96412, private score: 0.97029
+
+\section{Résultats}
+Voici les résultats des approches qu'on a utilisées avec meilleur score public 
+et privé (solution optimale en gras, celle choisi pour le score privé en 
+souligné) :
+
+\begin{table}[!htbp]
+  \caption{Résultats des Algorithmes sur le Leaderboard}
+  \label{results-table}
+  \centering
+  \begin{tabular}{lll}
+    \toprule
+    Algorithmes     & Public     & Private \\
+    \midrule
+    KNN (neighbours = 1) & $\sim$0.99757  & \underline{$\sim$0.99669} \\
+    KNN (ball tree + canberra) & $\sim$0.99273  & \textbf{$\sim$0.99779} \\
+    Hard voting & $\sim$0.98321  & $\sim$0.97396 \\
+    Soft voting & $\sim$0.99757  & \underline{$\sim$0.99559} \\
+    CNN & $\sim$0.83663  & $\sim$0.81313 \\
+    LSTM (one) & $\sim$0.97810  & $\sim$0.97792 \\
+    LSTM (bi) & $\sim$0.96412  & $\sim$0.97029 \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+
+\section{Discussion}
+\subsection{Normalisation des données}
+La normalisation des données n'est pas nécessairement obligatoire pour certaines
+ algorithmes de Machine Learning comme KNN, Random Forest et les méthodes de 
+ boosting. Nous avons obtenu les meilleurs résultats avec les données originales
+  et l'usage des algorithmes simples telles que KNN (n\_neighbours = 1), ce qui 
+  pourrait être obtenu par hasard grâce à la bonne qualité des données 
+  originales de l'ensemble du jeu de données d'entraînement et la forte 
+  similarité entre le train et le test. Par contre, pour certaines algorithmes 
+  de ML comme SVM et la plupart des modèles de DL, l'utilisation des données 
+  normalisées est en générale nécessaire. Il faut utiliser la moyenne et 
+  l'écart-type du train au lieu de manipuler le train et le test en même temps 
+  afin d'éviter les problèmes de "data-snooping". 
+
+\subsection{Hyperparamètres tuning pour les modèles de ML}
+Nous avons appris de nouvelles techniques pour l'ajustement des hyperparamètres 
+des modèles de ML dans cette compétition. À part des méthodes classiques comme 
+RandomizedSearchCV et GridSearchCV, nous nous avons servi du package "optuna" 
+pour optimiser les hyperparamètres de façon plus concise et rapide. 
+
+\subsection{Choix des paramètres pour les modèles de DL}
+Pour le modèle de CNN, le choix des paramètres tels que 
+out\_channels, kernel\_size, stride, padding
+joue un rôle très important dans la prédiction pour cette compétition. Par 
+contre, les résultats obtenus par les modèles de LSTM et Bi-LSTM sont moins 
+affectés par le choix de paramètres dans notre cas. 
+
+
+%\section{Références}
+%----------------exemples-----------------\\
+\begin{thebibliography}{99}  
+  \bibitem{ref1} \url{https://www.kaggle.com/cdeotte/mnist-perfect-100-using-knn}
+  \bibitem{ref2} \url{https://neptune.ai/blog/lightgbm-parameters-guide}
+  \bibitem{ref3} \url{https://www.kaggle.com/somang1418/tuning-hyperparameters-under-10-minutes-lgbm}
+  \bibitem{ref4} \url{https://lightgbm.readthedocs.io/en/latest/pythonapi/lightgbm.LGBMClassifier.html}
+  \bibitem{ref5} \url{https://www.kaggle.com/andradaolteanu/pytorch-rnns-and-lstms-explained-acc-0-99}
+  \bibitem{ref6} \url{https://towardsdatascience.com/hyperparameter-tuning-the-random-\\forest-in-python-using-scikit-learn-28d2aa77dd74}
+  \bibitem{ref7} \url{https://www.kaggle.com/prashant111/a-guide-on-xgboost-hyperparameters-tuning}
+  \bibitem{ref8} \url{https://www.kaggle.com/isaienkov/hyperparameters-tuning-techniques}
+  \bibitem{ref9} \url{https://xgboost.readthedocs.io/en/stable/parameter.html}
+  \bibitem{ref10}Tianxiang Zhang et al., Band Selection in Sentinel-2 Satellite for Agriculture Applications. \url{https://core.ac.uk/download/pdf/288368052.pdf}
+
+  \bibitem{ref11}Kashyap Raiyani et al., Sentinel-2 Image Scene Classification: A Comparison between
+  Sen2Cor and a Machine Learning Approach. \url{https://mdpi-res.com/d_attachment/remotesensing/remotesensing-13-00300/article_deploy/remotesensing-13-00300-v2.pdf}
+
+  \bibitem{ref12}Zhiwei Yi et al., Crop Classification Using Multi-Temporal Sentinel-2 Data in the Shiyang River Basin of China. \url{https://www.mdpi.com/2072-4292/12/24/4052}
+
+  \bibitem{ref13}Claudia Paris et al., Monitoring of agricultural areas by using Sentinel 2 image time series and deep learning techniques. \url{https://www.researchgate.net/publication/346822092_Monitoring_of_agricultural_areas_by_using_Sentinel_2_image_time_series_and_deep_learning_techniques}
+
+  \bibitem{ref14}Charlotte Pelletier et al., Deep Learning for the Classification of Sentinel-2 Image Time Series. 
+  \url{https://ieeexplore.ieee.org/document/8900123}
+
+\bibitem{ref15}Manuel Campos-Taberner et al., Understanding deep learning in land use classification based on Sentinel-2 time series. \url{https://www.nature.com/articles/s41598-020-74215-5}
+\end{thebibliography}
+\end{document}
