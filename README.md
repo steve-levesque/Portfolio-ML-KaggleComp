@@ -59,10 +59,16 @@ For this project to work, some programs needs to be installed with the required 
 - All the modules prompted to be install (i.e. the links in the later section below, or accept the prompt to download from your favorite IDE, if possible)
 
 ## How to Execute
+
 1- Create a project at the root of this repositry.
+
 2- Create a profile with your favorite IDE and specify a run_x.py file as the main.
+
 3- Use the run_template and the other examples to use the solver with your own problem to solve.
+
 4- Import your data in the same way as the example (MNIST), with a prefix that is the global sinificative name of the competiton or problem to solve.
+
+5- Download link available below for comp1 and comp2 data.
 
 <!-- Contribution -->
 ## Contribution
@@ -95,6 +101,12 @@ Programs
 - http://hyperopt.github.io/hyperopt/
 - https://keras.io/
 - https://www.tensorflow.org/
+
+Data Download Links
+- Comp1 Train : https://storage.googleapis.com/stevelevesque.dev/ML/comp1_train.csv
+- Comp1 Test : https://storage.googleapis.com/stevelevesque.dev/ML/comp1_test.csv
+- Comp2 Train : https://storage.googleapis.com/stevelevesque.dev/ML/comp2_train.csv
+- Comp2 Test : https://storage.googleapis.com/stevelevesque.dev/ML/comp2_test.csv
 
 Authors
 - Weiyue Cai
